@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en" clAass="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CraveCart - Delicious Food Delivered to Your Doorstep</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            orange: '#FF5200',
+                            orangeHover: '#E04800',
+                            lightOrange: '#FFF5F0',
+                            dark: '#1C1C1C',
+                            slate: '#282C3F',
+                            grayBg: '#F8F9FA'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Poppins', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 30px -10px rgba(0, 0, 0, 0.08)',
+                        'hover': '0 20px 40px -15px rgba(255, 82, 0, 0.2)',
+                        'card': '0 4px 20px rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Utilities and Animations */
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F8F9FA;
+            color: #1C1C1C;
+        }
+
+        /* Glassmorphism Header */
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Custom Scrollbar for Horizontal Categories */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Toast Animation */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast-animate {
+            animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Cart Drawer Slide */
+        .drawer-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .drawer-content {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+</head>
+<body class="relative min-h-screen flex flex-col antialiased selection:bg-brand-orange selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-24 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="sticky top-0 z-40 w-full glass-nav border-b border-gray-100 shadow-sm transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            
+            <!-- Logo -->
+            <a href="#home" class="flex items-center gap-2 group">
+                <div class="w-10 h-10 rounded-xl bg-brand-orange flex items-center justify-center text-white text-xl font-bold shadow-md shadow-brand-orange/30 group-hover:scale-105 transition-transform">
+                    <i class="fa-solid font-black fa-utensils"></i>
+                </div>
+                <span class="text-2xl font-extrabold tracking-tight text-brand-dark">Crave<span class="text-brand-orange">Cart</span></span>
+            </a>
+
+            <!-- Search Bar in Header (Desktop) -->
+            <div class="hidden md:flex flex-1 max-w-md mx-6 relative">
+                <input type="text" id="nav-search-input" onkeyup="handleGlobalSearch(event)" placeholder="Search for biryani, burger, pizza or restaurants..." class="w-full bg-gray-100/80 border border-transparent focus:border-brand-orange focus:bg-white text-sm rounded-full py-2.5 pl-10 pr-10 outline-none transition-all duration-200">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-sm"></i>
+                <button onclick="clearSearch()" id="clear-search-btn" class="hidden absolute right-3.5 top-2.5 text-gray-400 hover:text-gray-600 text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="hidden lg:flex items-center gap-8 font-semibold text-sm text-gray-700">
+                <a href="#home" class="hover:text-brand-orange transition-colors">Home</a>
+                <a href="#categories" class="hover:text-brand-orange transition-colors">Categories</a>
+                <a href="#restaurants" class="hover:text-brand-orange transition-colors">Restaurants</a>
+                <a href="#dishes" class="hover:text-brand-orange transition-colors">Dishes</a>
+                <a href="#offers" class="hover:text-brand-orange transition-colors text-brand-orange flex items-center gap-1.5">
+                    <i class="fa-solid fa-percent text-xs"></i> Offers
+                </a>
+            </nav>
+
+            <!-- Header Action Buttons -->
+            <div class="flex items-center gap-3">
+                <!-- Cart Button -->
+                <button onclick="toggleCartDrawer(true)" class="relative p-2.5 rounded-full bg-gray-100 hover:bg-brand-lightOrange hover:text-brand-orange text-gray-700 transition-all duration-200 flex items-center justify-center" aria-label="View Shopping Cart">
+                    <i class="fa-solid fa-bag-shopping text-lg"></i>
+                    <span id="cart-badge" class="hidden absolute -top-1 -right-1 bg-brand-orange text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-pulse">0</span>
+                </button>
+
+                <!-- User Profile / Auth Button -->
+                <div id="auth-btn-container">
+                    <button onclick="openAuthModal('login')" class="px-5 py-2.5 rounded-full bg-brand-dark hover:bg-black text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg">
+                        Login / Sign Up
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileNav()" class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Drawer Menu -->
+        <div id="mobile-nav" class="hidden lg:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-3">
+            <div class="relative mb-3">
+                <input type="text" onkeyup="handleGlobalSearch(event)" placeholder="Search food or restaurants..." class="w-full bg-gray-100 border-none text-sm rounded-lg py-2 pl-9 pr-4">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-xs"></i>
+            </div>
+            <a href="#home" onclick="toggleMobileNav()" class="block text-sm font-semibold text-gray-700 py-1 hover:text-brand-orange">Home</a>
+            <a href="#categories" onclick="toggleMobileNav()" class="block text-sm font-semibold text-gray-700 py-1 hover:text-brand-orange">Categories</a>
+            <a href="#restaurants" onclick="toggleMobileNav()" class="block text-sm font-semibold text-gray-700 py-1 hover:text-brand-orange">Restaurants</a>
+            <a href="#dishes" onclick="toggleMobileNav()" class="block text-sm font-semibold text-gray-700 py-1 hover:text-brand-orange">Dishes</a>
+            <a href="#offers" onclick="toggleMobileNav()" class="block text-sm font-semibold text-brand-orange py-1">Offers & Deals</a>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <!-- 1. HERO SECTION -->
+        <section id="home" class="relative bg-brand-dark min-h-[540px] lg:min-h-[600px] flex items-center overflow-hidden">
+            <!-- Background Image with Gradient Overlay -->
+            <div class="absolute inset-0 z-0">
+                <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1600&auto=format&fit=crop&q=80" alt="Delicious Food Background" class="w-full h-full object-cover object-center opacity-30">
+                <div class="absolute inset-0 bg-gradient-to-r from-brand-dark via-brand-dark/90 to-transparent"></div>
+            </div>
+
+            <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 text-white">
+                <div class="max-w-2xl space-y-6">
+                    <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 text-xs font-semibold text-orange-300">
+                        <i class="fa-solid fa-bolt text-brand-orange"></i> Fastest Food Delivery in Town
+                    </div>
+                    
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
+                        Delicious Food Delivered to Your <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange to-amber-400">Doorstep.</span>
+                    </h1>
+                    
+                    <p class="text-lg text-gray-300 font-normal leading-relaxed max-w-xl">
+                        Order your favourite food from the best top-rated restaurants near you with ultra-fast delivery and real-time tracking.
+                    </p>
+
+                    <!-- Hero Search Box -->
+                    <div class="bg-white p-2 rounded-2xl sm:rounded-full shadow-2xl flex flex-col sm:flex-row items-center gap-2 max-w-xl text-gray-800">
+                        <div class="flex items-center gap-3 w-full px-4 py-2">
+                            <i class="fa-solid fa-location-dot text-brand-orange text-lg"></i>
+                            <input type="text" id="hero-search-input" placeholder="Enter dish or restaurant name..." class="w-full bg-transparent text-sm focus:outline-none font-medium">
+                        </div>
+                        <button onclick="executeHeroSearch()" class="w-full sm:w-auto px-8 py-3.5 rounded-xl sm:rounded-full bg-brand-orange hover:bg-brand-orangeHover text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                            <i class="fa-solid fa-magnifying-glass"></i> Order Now
+                        </button>
+                    </div>
+
+                    <!-- Hero Quick Stats / Badges -->
+                    <div class="pt-4 flex flex-wrap items-center gap-6 text-xs text-gray-400 font-medium">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-emerald-400"></i> 100% Hygienic Packaging
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-clock text-amber-400"></i> 30-Min Delivery Guarantee
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-star text-yellow-400"></i> 4.8+ Customer Rating
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. SPECIAL OFFERS BANNERS -->
+        <section id="offers" class="py-10 bg-white border-b border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-brand-dark">Special Offers & Deals</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Use exclusive promo codes to save big on your cravings!</p>
+                    </div>
+                    <span class="text-xs font-semibold text-brand-orange flex items-center gap-1">
+                        <i class="fa-solid fa-fire"></i> Limited Time
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Offer Card 1 -->
+                    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 p-5 text-white shadow-md hover:shadow-xl transition-all duration-300">
+                        <div class="relative z-10 space-y-2">
+                            <span class="bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider">FIRST ORDER</span>
+                            <h3 class="text-2xl font-extrabold">30% OFF</h3>
+                            <p class="text-xs text-orange-100">Get up to ₹100 off on your first order.</p>
+                            <div class="pt-2 flex items-center justify-between">
+                                <span class="text-xs font-mono font-bold bg-white/20 px-2.5 py-1 rounded border border-white/30">CRAVE30</span>
+                                <button onclick="copyPromo('CRAVE30')" class="text-xs bg-white text-brand-orange px-3 py-1.5 rounded-lg font-bold hover:bg-orange-50 transition-colors">Apply</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Offer Card 2 -->
+                    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-600 to-pink-600 p-5 text-white shadow-md hover:shadow-xl transition-all duration-300">
+                        <div class="relative z-10 space-y-2">
+                            <span class="bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider">BOGO DEAL</span>
+                            <h3 class="text-2xl font-extrabold">Buy 1 Get 1</h3>
+                            <p class="text-xs text-rose-100">Free side or beverage on select menus.</p>
+                            <div class="pt-2 flex items-center justify-between">
+                                <span class="text-xs font-mono font-bold bg-white/20 px-2.5 py-1 rounded border border-white/30">BOGOFREE</span>
+                                <button onclick="copyPromo('BOGOFREE')" class="text-xs bg-white text-rose-600 px-3 py-1.5 rounded-lg font-bold hover:bg-rose-50 transition-colors">Apply</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Offer Card 3 -->
+                    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-5 text-white shadow-md hover:shadow-xl transition-all duration-300">
+                        <div class="relative z-10 space-y-2">
+                            <span class="bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider">FREE DELIVERY</span>
+                            <h3 class="text-2xl font-extrabold">₹0 Delivery</h3>
+                            <p class="text-xs text-emerald-100">Free delivery on orders above ₹299.</p>
+                            <div class="pt-2 flex items-center justify-between">
+                                <span class="text-xs font-mono font-bold bg-white/20 px-2.5 py-1 rounded border border-white/30">FREEDEL</span>
+                                <button onclick="copyPromo('FREEDEL')" class="text-xs bg-white text-emerald-700 px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-50 transition-colors">Apply</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Offer Card 4 -->
+                    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 p-5 text-white shadow-md hover:shadow-xl transition-all duration-300">
+                        <div class="relative z-10 space-y-2">
+                            <span class="bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider">WEEKEND SPECIAL</span>
+                            <h3 class="text-2xl font-extrabold">50% OFF</h3>
+                            <p class="text-xs text-indigo-100">Super weekend delight up to ₹150.</p>
+                            <div class="pt-2 flex items-center justify-between">
+                                <span class="text-xs font-mono font-bold bg-white/20 px-2.5 py-1 rounded border border-white/30">WEEKEND50</span>
+                                <button onclick="copyPromo('WEEKEND50')" class="text-xs bg-white text-indigo-700 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-50 transition-colors">Apply</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. FOOD CATEGORIES -->
+        <section id="categories" class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-brand-dark">What's on your mind?</h2>
+                    <p class="text-xs text-gray-500 mt-1">Explore food by popular categories</p>
+                </div>
+                <button onclick="filterCategory('all')" class="text-xs font-semibold text-brand-orange hover:underline">
+                    Reset Filter
+                </button>
+            </div>
+
+            <div id="category-container" class="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                <!-- Dynamic Category Cards rendered via JS -->
+            </div>
+        </section>
+
+        <!-- 4. POPULAR RESTAURANTS -->
+        <section id="restaurants" class="py-12 bg-white border-y border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-brand-dark">Top Restaurants Near You</h2>
+                        <p class="text-xs text-gray-500 mt-1">Handpicked restaurants with top safety and taste ratings</p>
+                    </div>
+                </div>
+
+                <div id="restaurants-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Dynamic Restaurant Cards rendered via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. POPULAR DISHES -->
+        <section id="dishes" class="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-brand-dark">Popular Dishes</h2>
+                    <p class="text-xs text-gray-500 mt-1">Most loved items delivered straight to your door</p>
+                </div>
+                <div id="active-category-badge" class="hidden inline-flex items-center gap-2 bg-orange-100 text-brand-orange px-3 py-1 rounded-full text-xs font-semibold">
+                    <span id="active-category-text">All Dishes</span>
+                    <button onclick="filterCategory('all')" class="hover:text-black"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <div id="dishes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Dynamic Dish Cards rendered via JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER SECTION -->
+    <footer class="bg-brand-dark text-white pt-16 pb-8 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-12 border-b border-gray-800">
+                <!-- Brand Info -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-9 h-9 rounded-xl bg-brand-orange flex items-center justify-center text-white text-lg font-bold">
+                            <i class="fa-solid fa-utensils"></i>
+                        </div>
+                        <span class="text-2xl font-extrabold tracking-tight">Crave<span class="text-brand-orange">Cart</span></span>
+                    </div>
+                    <p class="text-xs text-gray-400 leading-relaxed max-w-sm">
+                        CraveCart is your ultimate destination for instant food delivery. Partnered with 500+ top restaurants to deliver hygiene-checked, piping hot food in minutes.
+                    </p>
+                    <div class="flex items-center gap-3 pt-2">
+                        <a href="javascript:void(0)" onclick="showToast('Social link clicked', 'info')" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-brand-orange flex items-center justify-center text-xs transition-colors"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="javascript:void(0)" onclick="showToast('Social link clicked', 'info')" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-brand-orange flex items-center justify-center text-xs transition-colors"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="javascript:void(0)" onclick="showToast('Social link clicked', 'info')" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-brand-orange flex items-center justify-center text-xs transition-colors"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="javascript:void(0)" onclick="showToast('Social link clicked', 'info')" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-brand-orange flex items-center justify-center text-xs transition-colors"><i class="fa-brands fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+
+                <!-- Company Links -->
+                <div>
+                    <h4 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Company</h4>
+                    <ul class="space-y-2.5 text-xs text-gray-400">
+                        <li><a href="javascript:void(0)" onclick="openInfoModal('About Us', 'CraveCart is India\'s fastest growing food delivery platform bringing fresh meals from top chefs and kitchens directly to your doorstep with zero hassle.')" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="javascript:void(0)" onclick="openInfoModal('Careers', 'Join our energetic team! Email your CV to careers@cravecart.com')" class="hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="javascript:void(0)" onclick="openInfoModal('Team', 'Our team consists of passionate techies, foodies, and logistics masters dedicated to customer happiness.')" class="hover:text-white transition-colors">Team</a></li>
+                        <li><a href="javascript:void(0)" onclick="openInfoModal('CraveCart One', 'Enjoy unlimited free deliveries with CraveCart One membership starting at ₹99/month.')" class="hover:text-white transition-colors">CraveCart One</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Links -->
+                <div>
+                    <h4 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Contact & Support</h4>
+                    <ul class="space-y-2.5 text-xs text-gray-400">
+                        <li><a href="javascript:void(0)" onclick="openInfoModal('Help & Support', 'Need help with your order? Reach out to support@cravecart.com or call 1800-123-4567')" class="hover:text-white transition-colors">Help & Support</a></li>
+                        <li><a href="javascript:void(0)" onclick="openInfoModal('Partner with us', 'Grow your restaurant business with CraveCart! Register on partner.cravecart.com')" class="hover:text-white transition-colors">Partner with us</a></li>
+                        <li><a href="javascript:void(0)" onclick="openInfoModal('Ride with us', 'Deliver food and earn up to ₹35,000/month. Join as a CraveCart Rider today.')" class="hover:text-white transition-colors">Ride with us</a></li>
+                    </ul>
+                </div>
+
+                <!-- Legal Links -->
+                <div>
+                    <h4 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Legal</h4>
+                    <ul class="space-y-2.5 text-xs text-gray-400">
+                        <li><a href="javascript:void(0)" onclick="openInfoModal('Terms & Conditions', 'All orders are subject to restaurant availability. Offers cannot be combined unless specified.')" class="hover:text-white transition-colors">Terms & Conditions</a></li>
+                        <li><a href="javascript:void(0)" onclick="openInfoModal('Privacy Policy', 'We value your privacy. Your personal data and location are stored securely with end-to-end encryption.')" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="javascript:void(0)" onclick="openInfoModal('Cookie Policy', 'We use cookies to personalize content and deliver an optimal user experience.')" class="hover:text-white transition-colors">Cookie Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer Bottom -->
+            <div class="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
+                <p>&copy; 2026 CraveCart Inc. All rights reserved.</p>
+                <div class="flex items-center gap-6">
+                    <span>Made with <i class="fa-solid fa-heart text-brand-orange"></i> for food lovers</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SHOPPING CART SLIDE-OVER DRAWER -->
+    <div id="cart-drawer" class="fixed inset-0 z-50 overflow-hidden hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+        <!-- Backdrop Overlay -->
+        <div id="cart-backdrop" onclick="toggleCartDrawer(false)" class="drawer-overlay fixed inset-0 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity"></div>
+
+        <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div id="cart-content shadow-2xl" class="drawer-content w-screen max-w-md bg-white flex flex-col justify-between transform translate-x-full">
+                
+                <!-- Drawer Header -->
+                <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-bag-shopping text-brand-orange text-xl"></i>
+                        <h3 class="text-lg font-bold text-brand-dark">Your Shopping Cart</h3>
+                    </div>
+                    <button onclick="toggleCartDrawer(false)" class="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Drawer Body (Items List) -->
+                <div id="cart-items-container" class="flex-1 overflow-y-auto p-6 space-y-4">
+                    <!-- Items rendered dynamically -->
+                </div>
+
+                <!-- Drawer Footer (Bill Details & Checkout) -->
+                <div id="cart-summary-footer" class="p-6 border-t border-gray-100 bg-gray-50 space-y-4">
+                    <!-- Promo Code Input -->
+                    <div class="flex gap-2">
+                        <input type="text" id="coupon-input" placeholder="Enter Promo Code (e.g. CRAVE30)" class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 uppercase font-semibold outline-none focus:border-brand-orange">
+                        <button onclick="applyCouponFromInput()" class="bg-brand-dark text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-black transition-colors">Apply</button>
+                    </div>
+                    <div id="applied-coupon-tag" class="hidden flex items-center justify-between bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-200">
+                        <span><i class="fa-solid fa-ticket"></i> Promo <strong id="applied-code-text">CRAVE30</strong> applied!</span>
+                        <button onclick="removeCoupon()" class="text-emerald-800 hover:text-emerald-950"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+
+                    <!-- Bill Breakdown -->
+                    <div class="space-y-1.5 text-xs text-gray-600 font-medium">
+                        <div class="flex justify-between">
+                            <span>Item Total</span>
+                            <span id="bill-subtotal">₹0</span>
+                        </div>
+                        <div class="flex justify-between text-emerald-600" id="bill-discount-row">
+                            <span>Discount Promo</span>
+                            <span id="bill-discount">-₹0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Delivery Fee</span>
+                            <span id="bill-delivery">₹40</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Platform Fee & Taxes</span>
+                            <span id="bill-taxes">₹25</span>
+                        </div>
+                        <div class="border-t border-gray-200 pt-2 flex justify-between text-sm font-extrabold text-brand-dark">
+                            <span>To Pay</span>
+                            <span id="bill-total" class="text-brand-orange text-base">₹0</span>
+                        </div>
+                    </div>
+
+                    <button onclick="openCheckoutModal()" id="checkout-btn" class="w-full py-3.5 rounded-xl bg-brand-orange hover:bg-brand-orangeHover text-white font-bold text-sm shadow-md transition-all flex items-center justify-between px-5">
+                        <span>Proceed to Checkout</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTHENTICATION MODAL (LOGIN / SIGN UP) -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+            <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Modal Header Tabs -->
+            <div class="flex border-b border-gray-100 mb-6">
+                <button onclick="switchAuthTab('login')" id="tab-login" class="flex-1 pb-3 text-center text-sm font-bold border-b-2 border-brand-orange text-brand-orange">Login</button>
+                <button onclick="switchAuthTab('signup')" id="tab-signup" class="flex-1 pb-3 text-center text-sm font-bold border-b-2 border-transparent text-gray-400">Sign Up</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleAuthSubmit(event, 'login')" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Email / Phone Number</label>
+                    <input type="text" required placeholder="Enter email or 10-digit phone" class="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-orange">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Password</label>
+                    <input type="password" required placeholder="Enter password" class="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-orange">
+                </div>
+                <button type="submit" class="w-full py-3 bg-brand-orange hover:bg-brand-orangeHover text-white font-bold text-sm rounded-xl shadow-md transition-all">
+                    Login to CraveCart
+                </button>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="signup-form" onsubmit="handleAuthSubmit(event, 'signup')" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Full Name</label>
+                    <input type="text" id="signup-name" required placeholder="e.g. Rahul Sharma" class="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-orange">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Email Address</label>
+                    <input type="email" required placeholder="name@example.com" class="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-orange">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Password</label>
+                    <input type="password" required placeholder="Create a password" class="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-orange">
+                </div>
+                <button type="submit" class="w-full py-3 bg-brand-orange hover:bg-brand-orangeHover text-white font-bold text-sm rounded-xl shadow-md transition-all">
+                    Create Account
+                </button>
+            </form>
+
+            <p class="text-[11px] text-gray-400 text-center mt-4">
+                By continuing, you agree to CraveCart's Terms of Service & Privacy Policy.
+            </p>
+        </div>
+    </div>
+
+    <!-- CHECKOUT MODAL -->
+    <div id="checkout-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative my-8">
+            <button onclick="closeCheckoutModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <h3 class="text-xl font-bold text-brand-dark mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-truck-fast text-brand-orange"></i> Complete Your Delivery Details
+            </h3>
+
+            <form id="checkout-form" onsubmit="confirmOrder(event)" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Full Name</label>
+                        <input type="text" id="delivery-name" required value="Rahul Sharma" class="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-orange">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Phone Number</label>
+                        <input type="tel" required value="+91 98765 43210" class="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-orange">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Delivery Address</label>
+                    <textarea required rows="2" placeholder="House/Flat No., Building, Street Area" class="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-orange">Flat 402, Sunshine Apartments, MG Road, Koramangala</textarea>
+                </div>
+
+                <!-- Payment Method Selection -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-2">Select Payment Method</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="border border-brand-orange bg-orange-50 rounded-xl p-3 flex flex-col items-center justify-center gap-1 cursor-pointer text-center">
+                            <input type="radio" name="payment" value="upi" checked class="hidden">
+                            <i class="fa-solid fa-qrcode text-brand-orange text-lg"></i>
+                            <span class="text-xs font-bold text-brand-dark">UPI / GPay</span>
+                        </label>
+                        <label class="border border-gray-200 hover:border-gray-300 rounded-xl p-3 flex flex-col items-center justify-center gap-1 cursor-pointer text-center">
+                            <input type="radio" name="payment" value="card" class="hidden">
+                            <i class="fa-solid fa-credit-card text-gray-600 text-lg"></i>
+                            <span class="text-xs font-bold text-brand-dark">Credit / Debit</span>
+                        </label>
+                        <label class="border border-gray-200 hover:border-gray-300 rounded-xl p-3 flex flex-col items-center justify-center gap-1 cursor-pointer text-center">
+                            <input type="radio" name="payment" value="cod" class="hidden">
+                            <i class="fa-solid fa-money-bill-1-wave text-emerald-600 text-lg"></i>
+                            <span class="text-xs font-bold text-brand-dark">Cash on Delivery</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Final Amount Summary Banner -->
+                <div class="bg-gray-50 rounded-xl p-4 flex items-center justify-between border border-gray-100">
+                    <span class="text-xs font-semibold text-gray-600">Total Payable Amount</span>
+                    <span id="checkout-final-total" class="text-lg font-extrabold text-brand-orange">₹0</span>
+                </div>
+
+                <button type="submit" class="w-full py-4 bg-brand-orange hover:bg-brand-orangeHover text-white font-bold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-lock"></i> Pay & Place Order
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- LIVE ORDER TRACKING SIMULATION MODAL -->
+    <div id="tracking-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-center">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce">
+                <i class="fa-solid fa-check"></i>
+            </div>
+
+            <h3 class="text-2xl font-extrabold text-brand-dark">Order Placed Successfully!</h3>
+            <p class="text-xs text-gray-500 mt-1">Order ID: <strong id="tracking-order-id" class="text-brand-dark">#CC-84920</strong></p>
+
+            <!-- Order Progress Stepper -->
+            <div class="my-8 text-left space-y-6">
+                <!-- Step 1 -->
+                <div class="flex items-center gap-4">
+                    <div id="step-1-icon" class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">1</div>
+                    <div>
+                        <h4 class="text-xs font-bold text-brand-dark">Order Confirmed</h4>
+                        <p class="text-[11px] text-gray-400">Restaurant accepted your order</p>
+                    </div>
+                </div>
+                <!-- Step 2 -->
+                <div class="flex items-center gap-4">
+                    <div id="step-2-icon" class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold">2</div>
+                    <div>
+                        <h4 class="text-xs font-bold text-brand-dark">Food Preparing</h4>
+                        <p class="text-[11px] text-gray-400">Chef is cooking your fresh meal</p>
+                    </div>
+                </div>
+                <!-- Step 3 -->
+                <div class="flex items-center gap-4">
+                    <div id="step-3-icon" class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-bold">3</div>
+                    <div>
+                        <h4 class="text-xs font-bold text-brand-dark">Out for Delivery</h4>
+                        <p class="text-[11px] text-gray-400">Rider is on the way to your address</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="closeTrackingModal()" class="w-full py-3 bg-brand-dark hover:bg-black text-white font-bold text-sm rounded-xl transition-all">
+                Back to Browsing
+            </button>
+        </div>
+    </div>
+
+    <!-- GENERAL INFO / POLICY MODAL -->
+    <div id="info-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeInfoModal()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 id="info-modal-title" class="text-xl font-bold text-brand-dark mb-3">Info</h3>
+            <p id="info-modal-content" class="text-sm text-gray-600 leading-relaxed mb-6"></p>
+            <button onclick="closeInfoModal()" class="w-full py-2.5 bg-brand-orange text-white font-bold text-sm rounded-xl">Got it</button>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        // DATA MODEL & INITIAL STATE
+        const categories = [
+            { id: 'all', name: 'All Dishes', icon: 'fa-utensils', img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&auto=format&fit=crop&q=80' },
+            { id: 'biryani', name: 'Biryani', icon: 'fa-bowl-rice', img: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=200&auto=format&fit=crop&q=80' },
+            { id: 'pizza', name: 'Pizza', icon: 'fa-pizza-slice', img: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=200&auto=format&fit=crop&q=80' },
+            { id: 'burgers', name: 'Burgers', icon: 'fa-burger', img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&auto=format&fit=crop&q=80' },
+            { id: 'chinese', name: 'Chinese', icon: 'fa-drumstick-bite', img: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=200&auto=format&fit=crop&q=80' },
+            { id: 'south-indian', name: 'South Indian', icon: 'fa-pepper-hot', img: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=200&auto=format&fit=crop&q=80' },
+            { id: 'desserts', name: 'Desserts', icon: 'fa-cake-candles', img: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=200&auto=format&fit=crop&q=80' },
+            { id: 'ice-cream', name: 'Ice Cream', icon: 'fa-ice-cream', img: 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=200&auto=format&fit=crop&q=80' },
+            { id: 'beverages', name: 'Beverages', icon: 'fa-mug-hot', img: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=200&auto=format&fit=crop&q=80' }
+        ];
+
+        const restaurants = [
+            {
+                id: 'r1',
+                name: 'Royal Biryani House',
+                rating: 4.8,
+                time: '25-30 mins',
+                cuisines: 'Biryani, Mughlai, Kebabs',
+                discount: '50% OFF UPTO ₹100',
+                image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
+                category: 'biryani'
+            },
+            {
+                id: 'r2',
+                name: 'Pizza Express Italiana',
+                rating: 4.6,
+                time: '20-25 mins',
+                cuisines: 'Pizzas, Italian, Pasta',
+                discount: 'FREE DELIVERY',
+                image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80',
+                category: 'pizza'
+            },
+            {
+                id: 'r3',
+                name: 'The Burger Club',
+                rating: 4.5,
+                time: '15-20 mins',
+                cuisines: 'Burgers, American, Fast Food',
+                discount: '20% OFF',
+                image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80',
+                category: 'burgers'
+            },
+            {
+                id: 'r4',
+                name: 'Golden Dragon Chinese',
+                rating: 4.7,
+                time: '30-35 mins',
+                cuisines: 'Chinese, Asian, Noodles',
+                discount: '30% OFF',
+                image: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=600&auto=format&fit=crop&q=80',
+                category: 'chinese'
+            },
+            {
+                id: 'r5',
+                name: 'South Spice Bistro',
+                rating: 4.9,
+                time: '20-25 mins',
+                cuisines: 'South Indian, Dosa, Filter Coffee',
+                discount: 'BUY 1 GET 1 FREE',
+                image: 'https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=600&auto=format&fit=crop&q=80',
+                category: 'south-indian'
+            },
+            {
+                id: 'r6',
+                name: 'Sweet Treats Bakery',
+                rating: 4.8,
+                time: '15-20 mins',
+                cuisines: 'Desserts, Cakes, Bakery',
+                discount: 'FLAT ₹50 OFF',
+                image: 'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=600&auto=format&fit=crop&q=80',
+                category: 'desserts'
+            }
+        ];
+
+        const dishes = [
+            {
+                id: 'd1',
+                name: 'Chicken Biryani',
+                category: 'biryani',
+                price: 249,
+                rating: 4.9,
+                desc: 'Aromatic basmati rice cooked with succulent chicken pieces and secret spices.',
+                image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop&q=80'
+            },
+            {
+                id: 'd2',
+                name: 'Margherita Pizza',
+                category: 'pizza',
+                price: 199,
+                rating: 4.7,
+                desc: 'Classic Italian pizza loaded with rich mozzarella cheese & fresh basil leaves.',
+                image: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=500&auto=format&fit=crop&q=80'
+            },
+            {
+                id: 'd3',
+                name: 'Cheese Burger',
+                category: 'burgers',
+                price: 149,
+                rating: 4.6,
+                desc: 'Juicy grilled patty layered with melted cheddar cheese, lettuce and signature sauce.',
+                image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80'
+            },
+            {
+                id: 'd4',
+                name: 'Chicken Fried Rice',
+                category: 'chinese',
+                price: 179,
+                rating: 4.5,
+                desc: 'Wok-tossed jasmine rice with tender chicken, eggs, scallions and soy sauce.',
+                image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=500&auto=format&fit=crop&q=80'
+            },
+            {
+                id: 'd5',
+                name: 'Paneer Butter Masala',
+                category: 'chinese',
+                price: 199,
+                rating: 4.8,
+                desc: 'Cottage cheese cubes cooked in rich, creamy tomato gravy with butter & spices.',
+                image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=500&auto=format&fit=crop&q=80'
+            },
+            {
+                id: 'd6',
+                name: 'Chocolate Cake',
+                category: 'desserts',
+                price: 129,
+                rating: 4.9,
+                desc: 'Decadent multi-layered rich dark chocolate fudge cake with truffle ganache.',
+                image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&auto=format&fit=crop&q=80'
+            },
+            {
+                id: 'd7',
+                name: 'Crispy Masala Dosa',
+                category: 'south-indian',
+                price: 139,
+                rating: 4.8,
+                desc: 'Golden crispy rice crepe stuffed with spiced potato filling, served with chutneys.',
+                image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=500&auto=format&fit=crop&q=80'
+            },
+            {
+                id: 'd8',
+                name: 'Belgian Chocolate Ice Cream',
+                category: 'ice-cream',
+                price: 119,
+                rating: 4.9,
+                desc: 'Premium rich Belgian chocolate ice cream scoop studded with chocochips.',
+                image: 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=500&auto=format&fit=crop&q=80'
+            },
+            {
+                id: 'd9',
+                name: 'Mango Lassi & Coffee',
+                category: 'beverages',
+                price: 99,
+                rating: 4.7,
+                desc: 'Refreshing thick Alphonso mango yogurt lassi chilled to perfection.',
+                image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=500&auto=format&fit=crop&q=80'
+            }
+        ];
+
+        // CART STATE
+        let cart = [];
+        let activeCategory = 'all';
+        let searchQuery = '';
+        let appliedCoupon = null; // { code, discountPercent, maxDiscount }
+        let currentUser = null;
+
+        // INITIALIZATION
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCategories();
+            renderRestaurants();
+            renderDishes();
+            updateCartUI();
+        });
+
+        // CATEGORY RENDERING
+        function renderCategories() {
+            const container = document.getElementById('category-container');
+            container.innerHTML = categories.map(cat => `
+                <button onclick="filterCategory('${cat.id}')" class="flex-shrink-0 group flex flex-col items-center gap-2 text-center transition-transform hover:-translate-y-1 focus:outline-none">
+                    <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden p-1 border-2 ${activeCategory === cat.id ? 'border-brand-orange shadow-md' : 'border-transparent group-hover:border-orange-300'} bg-white transition-all">
+                        <img src="${cat.img}" alt="${cat.name}" class="w-full h-full object-cover rounded-full group-hover:scale-105 transition-transform">
+                    </div>
+                    <span class="text-xs font-bold ${activeCategory === cat.id ? 'text-brand-orange' : 'text-gray-700'} group-hover:text-brand-orange">
+                        ${cat.name}
+                    </span>
+                </button>
+            `).join('');
+        }
+
+        function filterCategory(catId) {
+            activeCategory = catId;
+            renderCategories();
+            renderDishes();
+
+            const badge = document.getElementById('active-category-badge');
+            const badgeText = document.getElementById('active-category-text');
+
+            if (catId !== 'all') {
+                const catObj = categories.find(c => c.id === catId);
+                badgeText.innerText = catObj ? catObj.name : catId;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // RESTAURANT RENDERING
+        function renderRestaurants() {
+            const grid = document.getElementById('restaurants-grid');
+            let filtered = restaurants;
+
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                filtered = filtered.filter(r => r.name.toLowerCase().includes(q) || r.cuisines.toLowerCase().includes(q));
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-gray-400 text-sm">No restaurants found matching your search.</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(r => `
+                <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-card hover:shadow-hover transition-all duration-300 group cursor-pointer" onclick="filterCategory('${r.category}')">
+                    <div class="relative h-48 overflow-hidden">
+                        <img src="${r.image}" alt="${r.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+                        
+                        <!-- Discount Ribbon -->
+                        <div class="absolute bottom-3 left-3 bg-brand-orange text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md tracking-wider shadow">
+                            <i class="fa-solid fa-tag"></i> ${r.discount}
+                        </div>
+                        
+                        <!-- Rating Badge -->
+                        <div class="absolute top-3 right-3 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow">
+                            ${r.rating} <i class="fa-solid fa-star text-[10px]"></i>
+                        </div>
+                    </div>
+
+                    <div class="p-5 space-y-2">
+                        <h3 class="font-bold text-lg text-brand-dark group-hover:text-brand-orange transition-colors">${r.name}</h3>
+                        <p class="text-xs text-gray-500 line-clamp-1">${r.cuisines}</p>
+                        
+                        <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-medium text-gray-600">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-clock text-brand-orange"></i> ${r.time}</span>
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-motorcycle text-brand-orange"></i> Delivery Available</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // DISH RENDERING
+        function renderDishes() {
+            const grid = document.getElementById('dishes-grid');
+            let filtered = dishes;
+
+            if (activeCategory !== 'all') {
+                filtered = filtered.filter(d => d.category === activeCategory);
+            }
+
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                filtered = filtered.filter(d => d.name.toLowerCase().includes(q) || d.desc.toLowerCase().includes(q));
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400 text-sm">No dishes found matching your criteria. Try another category!</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(dish => {
+                const cartItem = cart.find(i => i.id === dish.id);
+                const qty = cartItem ? cartItem.quantity : 0;
+
+                return `
+                    <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-card hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+                        <div>
+                            <div class="relative h-44 overflow-hidden">
+                                <img src="${dish.image}" alt="${dish.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-brand-dark text-xs font-extrabold px-2 py-1 rounded-md flex items-center gap-1 shadow">
+                                    <i class="fa-solid fa-star text-amber-500"></i> ${dish.rating}
+                                </div>
+                            </div>
+
+                            <div class="p-4 space-y-1.5">
+                                <div class="flex items-start justify-between gap-2">
+                                    <h3 class="font-bold text-base text-brand-dark group-hover:text-brand-orange transition-colors">${dish.name}</h3>
+                                    <span class="font-extrabold text-sm text-brand-orange">₹${dish.price}</span>
+                                </div>
+                                <p class="text-xs text-gray-500 leading-relaxed line-clamp-2">${dish.desc}</p>
+                            </div>
+                        </div>
+
+                        <div class="p-4 pt-0 flex items-center gap-2">
+                            ${qty === 0 ? `
+                                <button onclick="addToCart('${dish.id}')" class="flex-1 py-2 rounded-xl bg-brand-lightOrange text-brand-orange font-bold text-xs hover:bg-brand-orange hover:text-white transition-all duration-200 border border-brand-orange/20 shadow-sm flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-plus"></i> Add to Cart
+                                </button>
+                            ` : `
+                                <div class="flex-1 flex items-center justify-between bg-brand-orange text-white rounded-xl px-3 py-1.5 text-xs font-bold shadow-sm">
+                                    <button onclick="updateCartQty('${dish.id}', -1)" class="w-6 h-6 rounded flex items-center justify-center hover:bg-black/20"><i class="fa-solid fa-minus"></i></button>
+                                    <span>${qty}</span>
+                                    <button onclick="updateCartQty('${dish.id}', 1)" class="w-6 h-6 rounded flex items-center justify-center hover:bg-black/20"><i class="fa-solid fa-plus"></i></button>
+                                </div>
+                            `}
+                            
+                            <button onclick="quickOrderNow('${dish.id}')" class="py-2 px-3 rounded-xl bg-brand-dark hover:bg-black text-white font-semibold text-xs transition-colors" title="Order Now Immediately">
+                                Buy Now
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // CART LOGIC
+        function addToCart(dishId) {
+            const dish = dishes.find(d => d.id === dishId);
+            if (!dish) return;
+
+            const existing = cart.find(item => item.id === dishId);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({ ...dish, quantity: 1 });
+            }
+
+            showToast(`Added "${dish.name}" to cart`, 'success');
+            updateCartUI();
+            renderDishes();
+        }
+
+        function updateCartQty(dishId, change) {
+            const index = cart.findIndex(item => item.id === dishId);
+            if (index > -1) {
+                cart[index].quantity += change;
+                if (cart[index].quantity <= 0) {
+                    cart.splice(index, 1);
+                    showToast('Item removed from cart', 'info');
+                }
+            }
+            updateCartUI();
+            renderDishes();
+        }
+
+        function quickOrderNow(dishId) {
+            const existing = cart.find(item => item.id === dishId);
+            if (!existing) {
+                addToCart(dishId);
+            }
+            toggleCartDrawer(true);
+        }
+
+        function updateCartUI() {
+            // Update Cart Badge
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const badge = document.getElementById('cart-badge');
+            if (totalItems > 0) {
+                badge.innerText = totalItems;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            // Render Items in Drawer
+            const itemsContainer = document.getElementById('cart-items-container');
+            if (cart.length === 0) {
+                itemsContainer.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400 space-y-4">
+                        <i class="fa-solid fa-basket-shopping text-5xl text-gray-300"></i>
+                        <div>
+                            <p class="font-bold text-gray-600">Your cart is empty</p>
+                            <p class="text-xs text-gray-400 mt-1">Good food is always waiting for you!</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                itemsContainer.innerHTML = cart.map(item => `
+                    <div class="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <img src="${item.image}" alt="${item.name}" class="w-14 h-14 object-cover rounded-lg">
+                        <div class="flex-1">
+                            <h4 class="text-xs font-bold text-brand-dark line-clamp-1">${item.name}</h4>
+                            <span class="text-xs font-extrabold text-brand-orange">₹${item.price * item.quantity}</span>
+                        </div>
+                        <div class="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1 text-xs font-bold">
+                            <button onclick="updateCartQty('${item.id}', -1)" class="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-black"><i class="fa-solid fa-minus text-[10px]"></i></button>
+                            <span class="px-1">${item.quantity}</span>
+                            <button onclick="updateCartQty('${item.id}', 1)" class="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-black"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Recalculate Bill Breakdown
+            calculateBill();
+        }
+
+        function calculateBill() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            // Free delivery if subtotal > ₹299 or FREEDEL promo applied
+            let deliveryFee = subtotal > 299 || (appliedCoupon && appliedCoupon.code === 'FREEDEL') ? 0 : 40;
+            if (subtotal === 0) deliveryFee = 0;
+
+            const taxes = subtotal > 0 ? 25 : 0;
+            
+            let discount = 0;
+            if (appliedCoupon && subtotal > 0) {
+                if (appliedCoupon.code === 'CRAVE30') {
+                    discount = Math.min(Math.round(subtotal * 0.30), 100);
+                } else if (appliedCoupon.code === 'WEEKEND50') {
+                    discount = Math.min(Math.round(subtotal * 0.50), 150);
+                } else if (appliedCoupon.code === 'BOGOFREE') {
+                    discount = 50;
+                }
+            }
+
+            const total = Math.max(0, subtotal - discount + deliveryFee + taxes);
+
+            document.getElementById('bill-subtotal').innerText = `₹${subtotal}`;
+            document.getElementById('bill-discount').innerText = `-₹${discount}`;
+            document.getElementById('bill-delivery').innerText = deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`;
+            document.getElementById('bill-taxes').innerText = `₹${taxes}`;
+            document.getElementById('bill-total').innerText = `₹${total}`;
+            document.getElementById('checkout-final-total').innerText = `₹${total}`;
+
+            const checkoutBtn = document.getElementById('checkout-btn');
+            checkoutBtn.disabled = subtotal === 0;
+            checkoutBtn.style.opacity = subtotal === 0 ? '0.5' : '1';
+        }
+
+        // PROMO CODE LOGIC
+        function applyCouponFromInput() {
+            const input = document.getElementById('coupon-input');
+            const code = input.value.trim().toUpperCase();
+            if (!code) return;
+            copyPromo(code);
+            input.value = '';
+        }
+
+        function copyPromo(code) {
+            const validCodes = ['CRAVE30', 'BOGOFREE', 'FREEDEL', 'WEEKEND50'];
+            if (!validCodes.includes(code)) {
+                showToast('Invalid promo code', 'error');
+                return;
+            }
+
+            appliedCoupon = { code };
+            document.getElementById('applied-code-text').innerText = code;
+            document.getElementById('applied-coupon-tag').classList.remove('hidden');
+            showToast(`Promo "${code}" applied!`, 'success');
+            calculateBill();
+        }
+
+        function removeCoupon() {
+            appliedCoupon = null;
+            document.getElementById('applied-coupon-tag').classList.add('hidden');
+            showToast('Promo code removed', 'info');
+            calculateBill();
+        }
+
+        // CART DRAWER TOGGLE
+        function toggleCartDrawer(open) {
+            const drawer = document.getElementById('cart-drawer');
+            const backdrop = document.getElementById('cart-backdrop');
+            const content = drawer.querySelector('.drawer-content');
+
+            if (open) {
+                drawer.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.add('opacity-100');
+                    content.classList.remove('translate-x-full');
+                }, 10);
+            } else {
+                backdrop.classList.remove('opacity-100');
+                content.classList.add('translate-x-full');
+                setTimeout(() => {
+                    drawer.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // GLOBAL SEARCH LOGIC
+        function handleGlobalSearch(event) {
+            searchQuery = event.target.value;
+            const clearBtn = document.getElementById('clear-search-btn');
+            if (searchQuery) {
+                clearBtn?.classList.remove('hidden');
+            } else {
+                clearBtn?.classList.add('hidden');
+            }
+
+            renderRestaurants();
+            renderDishes();
+        }
+
+        function clearSearch() {
+            searchQuery = '';
+            document.getElementById('nav-search-input').value = '';
+            document.getElementById('clear-search-btn').classList.add('hidden');
+            renderRestaurants();
+            renderDishes();
+        }
+
+        function executeHeroSearch() {
+            const heroInput = document.getElementById('hero-search-input').value;
+            if (heroInput) {
+                searchQuery = heroInput;
+                renderRestaurants();
+                renderDishes();
+                document.getElementById('dishes').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // AUTHENTICATION MODAL LOGIC
+        function openAuthModal(tab = 'login') {
+            switchAuthTab(tab);
+            document.getElementById('auth-modal').classList.remove('hidden');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+        }
+
+        function switchAuthTab(tab) {
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const tabLogin = document.getElementById('tab-login');
+            const tabSignup = document.getElementById('tab-signup');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+                tabLogin.className = 'flex-1 pb-3 text-center text-sm font-bold border-b-2 border-brand-orange text-brand-orange';
+                tabSignup.className = 'flex-1 pb-3 text-center text-sm font-bold border-b-2 border-transparent text-gray-400';
+            } else {
+                loginForm.classList.add('hidden');
+                signupForm.classList.remove('hidden');
+                tabSignup.className = 'flex-1 pb-3 text-center text-sm font-bold border-b-2 border-brand-orange text-brand-orange';
+                tabLogin.className = 'flex-1 pb-3 text-center text-sm font-bold border-b-2 border-transparent text-gray-400';
+            }
+        }
+
+        function handleAuthSubmit(event, type) {
+            event.preventDefault();
+            const name = type === 'signup' ? document.getElementById('signup-name').value : 'Rahul Sharma';
+            currentUser = { name };
+            
+            // Update Navigation Button with User Profile Name
+            const authContainer = document.getElementById('auth-btn-container');
+            authContainer.innerHTML = `
+                <div class="flex items-center gap-2 bg-brand-lightOrange text-brand-orange px-4 py-2 rounded-full border border-orange-200 font-bold text-xs">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Hi, ${name.split(' ')[0]}</span>
+                </div>
+            `;
+
+            closeAuthModal();
+            showToast(`Welcome back, ${name}!`, 'success');
+        }
+
+        // CHECKOUT & TRACKING LOGIC
+        function openCheckoutModal() {
+            if (cart.length === 0) return;
+            toggleCartDrawer(false);
+            document.getElementById('checkout-modal').classList.remove('hidden');
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+        }
+
+        function confirmOrder(event) {
+            event.preventDefault();
+            closeCheckoutModal();
+            
+            // Reset Cart
+            cart = [];
+            appliedCoupon = null;
+            document.getElementById('applied-coupon-tag').classList.add('hidden');
+            updateCartUI();
+            renderDishes();
+
+            // Generate Order ID & Open Live Order Tracking Simulation
+            const orderId = '#CC-' + Math.floor(10000 + Math.random() * 90000);
+            document.getElementById('tracking-order-id').innerText = orderId;
+            document.getElementById('tracking-modal').classList.remove('hidden');
+
+            // Simulate Tracking Step Animation
+            setTimeout(() => {
+                document.getElementById('step-2-icon').className = 'w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold';
+            }, 2500);
+
+            setTimeout(() => {
+                document.getElementById('step-3-icon').className = 'w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold';
+            }, 5000);
+        }
+
+        function closeTrackingModal() {
+            document.getElementById('tracking-modal').classList.add('hidden');
+            showToast('Order complete! Thanks for ordering with CraveCart.', 'success');
+        }
+
+        // INFO & FOOTER MODALS
+        function openInfoModal(title, content) {
+            document.getElementById('info-modal-title').innerText = title;
+            document.getElementById('info-modal-content').innerText = content;
+            document.getElementById('info-modal').classList.remove('hidden');
+        }
+
+        function closeInfoModal() {
+            document.getElementById('info-modal').classList.add('hidden');
+        }
+
+        function toggleMobileNav() {
+            const nav = document.getElementById('mobile-nav');
+            nav.classList.toggle('hidden');
+        }
+
+        // TOAST NOTIFICATION SYSTEM
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-brand-dark text-white';
+            let icon = 'fa-circle-info text-blue-400';
+
+            if (type === 'success') {
+                bgClass = 'bg-slate-900 text-white border-l-4 border-emerald-500';
+                icon = 'fa-circle-check text-emerald-400';
+            } else if (type === 'error') {
+                bgClass = 'bg-slate-900 text-white border-l-4 border-rose-500';
+                icon = 'fa-circle-exclamation text-rose-400';
+            } else if (type === 'info') {
+                bgClass = 'bg-slate-900 text-white border-l-4 border-brand-orange';
+                icon = 'fa-circle-info text-brand-orange';
+            }
+
+            toast.className = `toast-animate pointer-events-auto p-4 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-semibold max-w-xs ${bgClass}`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i> <span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
